@@ -23,6 +23,8 @@ function isValidMessage(data) {
       return data.message && typeof data.message === "string";
     case "DISCONNECT":
       return true;
+    case "TYPING":
+      return true;
     default:
       return false;
   }
@@ -43,6 +45,7 @@ function handleConnection(ws, wss) {
     }
 
     if (!isValidMessage(data)) {
+      console.log("invalid message");
       ws.send(
         JSON.stringify({ type: "ERROR", message: "Invalid message format." })
       );
@@ -58,6 +61,9 @@ function handleConnection(ws, wss) {
         break;
       case "SEND_MESSAGE":
         sendMessage(ws, data.message);
+        break;
+      case "TYPING":
+        sendTypingEvent(ws);
         break;
       default:
         console.log("⚠️ Unknown event:", data.type);
@@ -119,7 +125,16 @@ function addUser(ws, userId, userName) {
 
   logWaitingUsers();
 }
-
+function sendTypingEvent(ws) {
+  const partner = activeChats.get(ws);
+  if (partner) {
+    partner.send(
+      JSON.stringify({
+        type: "TYPING",
+      })
+    );
+  }
+}
 function sendMessage(ws, message) {
   const partner = activeChats.get(ws);
 
